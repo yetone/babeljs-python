@@ -19,9 +19,13 @@ class Transformer(object):
         except:
             raise TransformError()
 
-    def transform_string(self, js, **opts):
+    def transform_string(self, js_content, **opts):
+        default_opts = {
+            'presets': ['es2015', 'stage-0', 'react']
+        }
+        opts.update(default_opts)
         try:
-            return self.context.call('babel.transform', js, opts)
+            return self.context.call('babel.transform', js_content, opts)
         except execjs.ProgramError as e:
             raise TransformError(e.message[7:])
 
@@ -34,5 +38,5 @@ def transform(js_path, **opts):
     return Transformer().transform(js_path, **opts)
 
 
-def transform_string(js, **opts):
-    return Transformer().transform_string(js, **opts)
+def transform_string(js_content, **opts):
+    return Transformer().transform_string(js_content, **opts)
