@@ -13,7 +13,7 @@ setup(
     license='MIT License',
     author='yetone',
     author_email='i@yetone.net',
-    packages=find_packages(),
+    packages=find_packages(exclude=['tests']),
     platforms='any',
     include_package_data=True,
     tests_require=(
