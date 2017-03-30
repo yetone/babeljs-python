@@ -36,8 +36,7 @@ class Transformer(object):
             raise TransformError()
 
     def transform_string(self, js_content, **_opts):
-        opts = self.opts
-        opts.update(_opts)
+        opts = dict(self.opts, **_opts)
         try:
             return self.context.call('babel.transform', js_content, opts)
         except execjs.ProgramError as e:
