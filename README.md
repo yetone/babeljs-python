@@ -1,4 +1,7 @@
-# PyBabeljs
+PyBabeljs
+============
+
+[![Build Status](https://api.travis-ci.org/yetone/babeljs-python.svg?branch=master)](https://travis-ci.org/yetone/babeljs-python)
 
 PyBabeljs is a python bindings to [Babel](https://babeljs.io/).
 
