@@ -20,12 +20,12 @@ class Transformer(object):
             raise TransformError()
 
     def transform_string(self, js_content, **opts):
-        default_opts = {
+        _opts = {
             'presets': ['es2015', 'stage-0', 'react']
         }
-        opts.update(default_opts)
+        _opts.update(opts)
         try:
-            return self.context.call('babel.transform', js_content, opts)
+            return self.context.call('babel.transform', js_content, _opts)
         except execjs.ProgramError as e:
             raise TransformError(e.message[7:])
 
