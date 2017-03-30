@@ -1,5 +1,3 @@
-__author__ = 'yetone'
-
 from babeljs import execjs
 from babeljs.source import get_abspath
 
@@ -10,22 +8,38 @@ class TransformError(Exception):
 
 class Transformer(object):
 
-    def __init__(self):
-        path = get_abspath('babeljs/browser.js')
+    def __init__(self, **_opts):
+        opts = {
+            'presets': ['es2015', 'stage-0', 'react']
+        }
+        opts.update(_opts)
+        plugins = opts.get('plugins', [])
+
+        babel_path = get_abspath('babeljs/browser.js')
+
+        codes = [
+            'var babel = require("{}");'.format(babel_path)
+        ]
+        for plugin in plugins:
+            if plugin == 'transform-vue-jsx':
+                transform_vue_jsx_path = get_abspath('babeljs/babel-plugin-transform-vue-jsx.min.js')  # noqa
+                codes.append(
+                    'var transformVueJsx = require("{}");'
+                    'babel.registerPlugin("{}", transformVueJsx);'.format(
+                        transform_vue_jsx_path, plugin
+                    )
+                )
         try:
-            self.context = execjs.compile(
-                'var babel = require("{}");'.format(path)
-            )
+            self.opts = opts
+            self.context = execjs.compile(''.join(codes))
         except:
             raise TransformError()
 
-    def transform_string(self, js_content, **opts):
-        _opts = {
-            'presets': ['es2015', 'stage-0', 'react']
-        }
-        _opts.update(opts)
+    def transform_string(self, js_content, **_opts):
+        opts = self.opts
+        opts.update(_opts)
         try:
-            return self.context.call('babel.transform', js_content, _opts)
+            return self.context.call('babel.transform', js_content, opts)
         except execjs.ProgramError as e:
             raise TransformError(e.message[7:])
 
@@ -35,8 +49,8 @@ class Transformer(object):
 
 
 def transform(js_path, **opts):
-    return Transformer().transform(js_path, **opts)
+    return Transformer(**opts).transform(js_path)
 
 
 def transform_string(js_content, **opts):
-    return Transformer().transform_string(js_content, **opts)
+    return Transformer(**opts).transform_string(js_content)

@@ -23,3 +23,13 @@ class TestTransformer(TestCase):
         js_path = path.join(ROOT, 'test.js')
         code = transformer.transform(js_path)
         self.assertEqual('"use strict";\n\nvar a = 1;', code)
+
+    def test_transform_vue_jsx(self):
+        js_path = path.join(ROOT, 'test_vue_jsx.js')
+        code = transformer.transform(js_path, **{
+            'presets': ['es2015', 'stage-0'],
+            'plugins': ['transform-decorators-legacy', 'transform-vue-jsx']}
+        )
+        self.assertEqual(open(
+            path.join(ROOT, 'result-test_vue_jsx.js'), 'r'
+        ).read(), code)
