@@ -18,5 +18,6 @@ setup(
     include_package_data=True,
     tests_require=(
         'pytest',
+        'py-mini-racer',
     )
 )

@@ -4,6 +4,9 @@ from os.path import abspath, dirname, join, isfile
 
 
 ROOT = abspath(join(dirname(__file__), 'static'))
+EXTERNAL_PLUGINS = (
+    'transform-vue-jsx',
+)
 
 
 def get_abspath(js_file):
