@@ -1,5 +1,5 @@
-from babeljs import execjs
-from babeljs.source import get_abspath
+from .jscontext import get_context, ContextException
+from babeljs.source import get_abspath, EXTERNAL_PLUGINS
 
 
 class TransformError(Exception):
@@ -8,8 +8,10 @@ class TransformError(Exception):
 
 class Transformer(object):
 
-    def __init__(self, **_opts):
+    def __init__(self, runtime='auto', **_opts):
+        self.runtime = runtime
         opts = {
+            'ast': False,
             'presets': ['es2015', 'stage-0', 'react']
         }
         opts.update(_opts)
@@ -17,30 +19,55 @@ class Transformer(object):
 
         babel_path = get_abspath('babeljs/browser.js')
 
-        codes = [
-            'var babel = require("{}");'.format(babel_path)
-        ]
+        codes = []
+        with open(babel_path) as f:
+            codes.append(f.read())
+        codes.append("""
+            var babel;
+            if (typeof Babel != 'undefined')
+                babel = Babel;
+            else
+                babel = module.exports;
+        """)
+
+        codes.append("""
+            if (typeof console == 'undefined') {
+                console = {};
+                ['log', 'error', 'warn', 'info', 'debug'].forEach(
+                    function(key) {
+                        console[key] = function() {};
+                    }
+                );
+            }
+        """)
+
         for plugin in plugins:
-            if plugin == 'transform-vue-jsx':
-                transform_vue_jsx_path = get_abspath('babeljs/babel-plugin-transform-vue-jsx.min.js')  # noqa
-                codes.append(
-                    'var transformVueJsx = require("{}");'
-                    'babel.registerPlugin("{}", transformVueJsx);'.format(
-                        transform_vue_jsx_path, plugin
-                    )
+            if plugin in EXTERNAL_PLUGINS:
+                plugin_path = get_abspath(
+                    'babeljs/babel-plugin-{}.min.js'.format(plugin)
                 )
+                with open(plugin_path) as f:
+                    codes.append(f.read())
+                codes.append("""
+                    babel.registerPlugin(
+                        "{}",
+                        this["babel-plugin-{}"] || module.exports
+                    );
+                """.format(plugin, plugin))
         try:
             self.opts = opts
-            self.context = execjs.compile(''.join(codes))
+            self.context = get_context(self.runtime)
+            self.context.eval(''.join(codes))
         except:
             raise TransformError()
 
     def transform_string(self, js_content, **_opts):
         opts = dict(self.opts, **_opts)
         try:
-            return self.context.call('babel.transform', js_content, opts)
-        except execjs.ProgramError as e:
-            raise TransformError(e.message[7:])
+            result = self.context.call('babel.transform', js_content, opts)
+            return result['code']
+        except ContextException as e:
+            raise TransformError(e.args[0])
 
     def transform(self, js_path, **opts):
         with open(js_path, 'r') as f:
